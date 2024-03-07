@@ -3,7 +3,8 @@
 const $showsList = $("#showsList");
 const $episodesArea = $("#episodesArea");
 const $searchForm = $("#searchForm");
-const BASE_URL = "http://api.tvmaze.com/"
+const $episodesList = $("#episodesList");
+const BASE_URL = "http://api.tvmaze.com/";
 
 
 /** Given a search term, search for tv shows that match that query.
@@ -19,11 +20,16 @@ async function getShowsByTerm(term) {
   const shows = [];
 
   for (let showData of resp.data) {
-    const show = {};
-    show.id = showData.show.id;
-    show.name = showData.show.name;
-    show.summary = showData.show.summary;
-    show.image = showData.show.image?.medium || "https://tinyurl.com/tv-missing";
+
+    let { id, name, summary, image } = showData.show;
+
+    const show = {
+                  id,
+                  name,
+                  summary,
+                  image: image ? image.medium : "https://tinyurl.com/tv-missing",
+                };
+
     shows.push(show);
   }
   return shows;
@@ -87,11 +93,8 @@ async function getEpisodesOfShow(id) {
   const episodes = [];
 
   for (let epData of resp.data) {
-    const episode = {};
-    episode.id = epData.id;
-    episode.name = epData.name;
-    episode.season = epData.season;
-    episode.number = epData.number;
+    const { id, name, season, number } = epData;
+    const episode = { id, name, season, number };
 
     episodes.push(episode);
   }
@@ -99,30 +102,29 @@ async function getEpisodesOfShow(id) {
 }
 
 
-/** Given array of episodes, create a list of episodes and append to DOM.
+/** Given array of episodes, create markup for each and append to DOM.
  *
  * An episode is { id, name, season, number }
  */
 
 function displayEpisodes(episodes) {
-  $episodesArea.empty();
+  $episodesList.empty();
 
-  const $episodes = $("<ul>");
   for (let episode of episodes) {
     const { name, season, number } = episode;
     const $episode = $(`<li>${name} (season ${season}, number ${number})</li>`);
-    $episodes.append($episode);
+    $episodesList.append($episode);
   }
-  $episodesArea.append($episodes);
+
 }
 
 
-/** Handle "Get Episodes" button clicks. Get episodes from API and display.
+/** Handle "Episodes" button clicks. Get episodes from API and display.
  *    Takes show id.
  *    Display episodes area.
  */
 
-async function searchEpisodesAndDisplay(id) {
+async function getEpisodesAndDisplay(id) {
   const episodes = await getEpisodesOfShow(id);
 
   $episodesArea.show();
@@ -130,9 +132,9 @@ async function searchEpisodesAndDisplay(id) {
 }
 
 
-$showsList.on("click", "button", async function handleSearchForm (evt) {
+$showsList.on("click", ".Show-getEpisodes", async function handleSearchForm (evt) {
 
   const $button = $(evt.target);
   const id = $button.closest(".Show").data("show-id");
-  await searchEpisodesAndDisplay(id);
+  await getEpisodesAndDisplay(id);
 });
